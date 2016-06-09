@@ -1,3 +1,19 @@
 .hide {
     display: none;
 }
+
+.drop-zone {
+    text-align: center;
+    padding: 40px 0;
+    border: dotted 3px lightgray;
+    font-size: 18px;
+}
+
+.image {
+    overflow: hidden;
+    background: transparent url(../images/preloader.gif) no-repeat center;
+    padding-bottom: 30px;
+}
+.image > img {
+    width: 100%;
+}

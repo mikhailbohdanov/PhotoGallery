@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Photo Gallery</title>
+    <title>Фото мир</title>
 
     <link href="css/normalize.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
@@ -26,20 +26,14 @@
 
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <li ng-class="{active: currentPage == 'gallery'}">
-                    <a href="#/gallery">Галерея</a>
+                <li>
+                    <a href="#/gallery/all">Все изображения</a>
                 </li>
-                <li class="dropdown">
-                    <a href="#/gallery" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Галереи <span class="caret"></span></a>
-                    <ul class="dropdown-menu" role="menu">
-                        <li>
-                            <a href="#/gallery/all">Все фотографии</a>
-                        </li>
-                        <li class="divider"></li>
-                        <li ng-repeat="gallery in galleryList">
-                            <a href="#/gallery/{{gallery._id}}">{{gallery.name}}</a>
-                        </li>
-                    </ul>
+                <li>
+                    <a href="#/gallery">Галереи</a>
+                </li>
+                <li>
+                    <a href="#/contacts">Контакты</a>
                 </li>
             </ul>
             <ul ng-show="showAdmin" class="nav navbar-nav navbar-right">
@@ -51,8 +45,133 @@
 
 <div ng-view></div>
 
-<script type="angular/template" id="galleries">
+<script type="angular/template" id="galleryList">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4" ng-repeat="gallery in galleryList">
+                {{gallery.name}}
+            </div>
+        </div>
+    </div>
+</script>
+<script type="angular/template" id="imageListAll">
 
+</script>
+<script type="angular/template" id="imageList">
+
+</script>
+
+<script type="angular/template" id="galleryAdmin">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-9 col-sm-9 col-md-9 col-lg-9">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Название галереи</th>
+                        <th>Количество картинок</th>
+                        <th>Дата создания</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-show="galleryList.length == 0">
+                        <td colspan="5">Галереи не созданы</td>
+                    </tr>
+                    <tr ng-repeat="gallery in galleryList" ng-show="galleryList.length > 0">
+                        <td>{{gallery.name}}</td>
+                        <td>{{fnImages(gallery).length}}</td>
+                        <td>{{gallery.created}}</td>
+                        <td>
+                            <button class="btn btn-xs btn-success" ng-click="fnEdit(gallery)">Изменить</button>
+                            <button class="btn btn-xs btn-danger" ng-click="fnDelete(gallery)">Удалить</button>
+                            <a class="btn btn-xs btn-info" href="#/admin/images/{{gallery.id}}">Изображения</a>
+                            <a ng-show="fnImages(gallery).length"
+                               class="btn btn-xs btn-info"
+                               href="#/admin/thumbnail/{{gallery.id}}">Обложка</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3" ng-show="!active">
+                <button ng-click="fnCreate()" class="btn btn-default btn-lg btn-block">Создать галерею</button>
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3" ng-show="(active == 'create' || active == 'edit')">
+                <h3>{{active=="create"?"Создание":"Измениие"}} галереи</h3>
+
+                <input type="hidden"
+                       ng-model="id" />
+
+                <input type="hidden"
+                       ng-model="created"/>
+
+                <div class="form-group">
+                    <label for="name"
+                           class="sr-only">Название галереи</label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="name"
+                           ng-model="name"
+                           placeholder="Название галереи"
+                           required>
+                </div>
+
+                <div class="row">
+                    <button ng-click="fnSave()"
+                            class="col-xs-5 btn btn-primary">Сохранить</button>
+
+                    <button ng-click="fnCancel()"
+                            class="col-xs-5 col-xs-offset-2 btn btn-danger">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+<script type="angular/template" id="imagesAdmin">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-9 col-sm-9 col-md-9 col-lg-9 row">
+                <div ng-repeat="image in imageList" class="col-xs-12 col-sm-6 col-md-4 col-lg-3 image">
+                    <img src="http://img.imageresizer.io/{{image.remoteId}}?width=250&height=250" />
+                </div>
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3" ng-show="!active">
+                <button ng-click="fnCreate()" class="btn btn-default btn-lg btn-block">Загрузить изображение</button>
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3" ng-show="(active == 'upload' || active == 'uploading')">
+                <h3>Загрузка картинки</h3>
+
+                <input type="hidden"
+                       ng-model="id" />
+
+                <div class="form-group">
+                    <div class="form-group">
+                        <label for="urlImage"
+                               class="sr-only">Ссылка на изображение</label>
+
+                        <input type="text"
+                               class="form-control"
+                               id="urlImage"
+                               ng-model="urlImage"
+                               placeholder="Ссылка на изображение"
+                               ng-disabled="active == 'uploading'"
+                               required>
+                </div>
+
+                <div class="row">
+                    <button ng-click="fnSave()"
+                            ng-disabled="active == 'uploading'"
+                            class="col-xs-5 btn btn-primary">Сохранить</button>
+
+                    <button ng-click="fnCancel()"
+                            ng-disabled="active == 'uploading'"
+                            class="col-xs-5 col-xs-offset-2 btn btn-danger">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </script>
 
 <script src="js/jquery.js"></script>

@@ -1,7 +1,8 @@
 'use strict';
 
-var CONTROLLERS = {
-    galleries       : 'Galleries',
+var STORAGES = {
+    galleryList : 'galleryList',
+    imageList   : 'imageList'
 };
 
 var TEMPLATES   = {};
@@ -24,7 +25,7 @@ storage.factory(
                 return storage = {
                     getStorage  : function(name, model, secondary) {
                         var _cache;
-                        if (!cache[name]) {
+                        if (!(_cache = cache[name])) {
                             model.push({name:'id',type:'string',auto:true});
 
                             cache[name] = _cache = {
@@ -40,14 +41,14 @@ storage.factory(
                             }
                         }
 
-                        if (cache[name].secondary) {
-                            if (!cache[name].storage[model]) {
-                                cache[name].storage[model]  = $fireBase(link.child(name + '_' + model)).$asArray();
+                        if (_cache.secondary) {
+                            if (!_cache.storage[model]) {
+                                _cache.storage[model]  = $fireBase(link.child(name + '_' + model)).$asArray();
                             }
 
-                            return cache[name].storage[model];
+                            return _cache.storage[model];
                         } else {
-                            return cache[name].storage;
+                            return _cache.storage;
                         }
                     },
                     create      : function(name) {
@@ -80,6 +81,16 @@ storage.factory(
                                 case 'array':
                                     value   = [];
                                     break;
+                                case 'object':
+                                    value   = {};
+                                    break;
+                                case 'date':
+                                    var date = new Date();
+
+                                    value   = [date.getHours(), date.getMinutes()].join(':');
+                                    value  += ' ';
+                                    value  += [date.getDate(), date.getMonth() + 1, date.getFullYear()].join('/');
+                                    break;
                             }
 
                             element[variable.name]  = value;
@@ -98,6 +109,7 @@ storage.factory(
 
                         angular.forEach(cache[name].model, function(variable) {
                             switch (variable.type) {
+                                case 'date':
                                 case 'string':
                                 case 'boolean':
                                 case 'int':
@@ -118,6 +130,15 @@ storage.factory(
                                             arr.push(e.id);
                                         }
                                     });
+                                    break;
+                                case 'object':
+                                    var obj     = src[variable.name];
+
+                                    if (!obj) {
+                                        obj         = src[variable.name] = {};
+                                    }
+
+
                                     break;
                             }
                         });
@@ -157,41 +178,18 @@ storage.factory(
                     }
                 };
             } finally {
-                storage.getStorage(CONTROLLERS.Galleries, [
-                    {name: ''}
-                ]);
-                
-                
-                storage.getStorage(CONTROLLERS.users, [
-                    {name:'login',type:'string'},
-                    {name:'password',type:'string'},
-                    {name:'firstName',type:'string'},
-                    {name:'lastName',type:'string'}
+                storage.getStorage(STORAGES.galleryList, [
+                    {name: 'name', type: 'string'},
+                    {name: 'created', type: 'date'},
+                    {name: 'thumbnail', type: 'string'},
+                    {name: 'images', type: 'array', extend: STORAGES.imageList}
                 ]);
 
-                storage.getStorage(CONTROLLERS.options, [
-                    {name:'optionName',type:'string'},
-                    {name:'optionPrice',type:'float'}
-                ]);
-
-                storage.getStorage(CONTROLLERS.hotelNumbers, [
-                    {name:'numberName',type:'int'},
-                    {name:'numberPosition',type:'string'},
-                    {name:'numberType',type:'string'},
-                    {name:'numberPlaces',type:'int'},
-                    {name:'numberPrice',type:'float'}
+                storage.getStorage(STORAGES.imageList, [
+                    {name: 'remoteId', type: 'string'},
+                    {name: 'width', type: 'int'},
+                    {name: 'height', type: 'int'}
                 ], true);
-
-                storage.getStorage(CONTROLLERS.hotels, [
-                    {name:'hotelName',type:'string'},
-                    {name:'hotelAddress',type:'string'},
-                    {name:'hotelDirector',type:'string'},
-                    {name:'hotelPhone',type:'string'},
-                    {name:'hotelNumbers',type:'array',extend:CONTROLLERS.hotelNumbers},
-                    {name:'hotelOptions',type:'array',extend:CONTROLLERS.options}
-                ]);
-
-
             }
         }
     ]
@@ -205,109 +203,83 @@ controllers.config(
         function($routeProvider) {
             $routeProvider
                 .when('/gallery', {
-                    template    : TEMPLATES.galleries,
-                    controller  : CONTROLLERS.galleries
-                });
+                    template    : TEMPLATES.galleryList,
+                    controller  : 'GalleryList'
+                })
+                .when('/gallery/all', {
+                    template    : TEMPLATES.imageListAll,
+                    controller  : 'GalleryAll'
+                })
+                .when('/gallery/view/:galleryId', {
+                    template    : TEMPLATES.imageList,
+                    controller  : 'GalleryView'
+                })
+
+                .when('/contacts', {
+                    
+                })
+
+                .when('/admin', {
+                    template    : TEMPLATES.galleryAdmin,
+                    controller  : 'GalleryAdmin'
+                })
+                .when('/admin/images/:galleryId', {
+                    template    : TEMPLATES.imagesAdmin,
+                    controller  : 'ImagesAdmin'
+                })
+                .when('/admin/thumbnail/:galleryId', {
+
+                })
+                .when('/admin/thumbnail/:galleryId/:imageId', {
+
+                })
         }
     ]
 );
 
 controllers.controller(
-    'Galleries',
+    'GalleryList',
     [
         '$rootScope',
         '$scope',
         'photosStorage',
         function($rootScope, $scope, photosStorage) {
-            var galleries   = photosStorage.getStorage(CONTROLLERS.galleries);
-
-            angular.extend($rootScope, {
-                galleryList : galleries
-            });
+            var galleryList = photosStorage.getStorage(STORAGES.galleryList);
 
             angular.extend($scope, {
-                galleryList : galleries
+                galleryList : galleryList
             });
         }
     ]
 );
+
 controllers.controller(
-    'Login',
+    'GalleryAdmin',
     [
         '$rootScope',
         '$scope',
-        'hotelStorage',
-        '$location',
-        function($rootScope, $scope, hotelStorage, $location) {
-            var users   = hotelStorage.getStorage(CONTROLLERS.users);
-
+        'photosStorage',
+        function($rootScope, $scope, photosStorage) {
+            var galleryList = photosStorage.getStorage(STORAGES.galleryList);
+            
             angular.extend($scope, {
-                users       : users,
-                action      : '',
-                signin      : function() {
-                    var user;
-
-                    if ($scope.login !== 'admin') {
-                        users.forEach(function(_user) {
-                            if (_user.login === $scope.login) {
-                                user    = _user;
-                            }
-                        });
-
-                        if (user) {
-                            if ($scope.password === user.password) {
-                                $location.path('/hotels');
-                                $scope.$apply();
-                                $rootScope.currentUser  = user;
-                            }
-                        } else {
-                            $scope.action   = 'register';
-                        }
-                    } else {
-                        if ($scope.password === 'admin') {
-                            $location.path('/hotels');
-
-                            $rootScope.isAdmin  = true;
-                        }
-                    }
-                },
-                register    : function() {
-                    hotelStorage.save(
-                        CONTROLLERS.users,
-                        $scope
-                    );
-
-                    $scope.action   = '';
-
-                    setTimeout($scope.signin, 100);
-                }
-            }, hotelStorage.create(CONTROLLERS.users));
-        }
-    ]
-);
-controllers.controller(
-    'Options',
-    [
-        '$scope',
-        'hotelStorage',
-        function($scope, hotelStorage) {
-            var options      = hotelStorage.getStorage(CONTROLLERS.options);
-
-            angular.extend($scope, {
-                options     : options,
+                galleryList : galleryList,
                 active      : '',
+                fnImages    : function(gallery) {
+                    return gallery.images || (gallery.images = photosStorage.getStorage(STORAGES.imageList, gallery.id));
+                },
                 fnCreate    : function() {
-                    hotelStorage.set(
-                        CONTROLLERS.options,
+                    photosStorage.set(
+                        STORAGES.galleryList,
                         $scope,
-                        hotelStorage.create(CONTROLLERS.options)
+                        photosStorage.create(STORAGES.galleryList)
                     );
 
                     $scope.active   = 'create';
                 },
                 fnEdit      : function(model) {
-                    hotelStorage.set(
-                        CONTROLLERS.options,
+                    photosStorage.set(
+                        STORAGES.galleryList,
                         $scope,
                         model
                     );
@@ -315,122 +287,72 @@ controllers.controller(
                     $scope.active   = 'edit';
                 },
                 fnSave      : function() {
-                    hotelStorage.save(
-                        CONTROLLERS.options,
-                        $scope
+                    photosStorage.save(
+                        STORAGES.galleryList,
+                        $scope,
+                        $scope.id
                     );
 
                     $scope.active   = '';
                 },
                 fnDelete    : function(model) {
-                    hotelStorage.delete(CONTROLLERS.options, $scope, model);
+                    photosStorage.delete(STORAGES.galleryList, $scope, model);
                 },
                 fnCancel    : function() {
                     $scope.active   = '';
                 }
-            });
+            })
         }
     ]
 );
 controllers.controller(
-    'Hotels',
+    'ImagesAdmin',
     [
+        '$rootScope',
         '$scope',
-        'hotelStorage',
-        function($scope, hotelStorage) {
-            var hotels      = hotelStorage.getStorage(CONTROLLERS.hotels),
-                options     = hotelStorage.getStorage(CONTROLLERS.options);
-
-            angular.extend($scope, {
-                hotels      : hotels,
-                options     : options,
-                active      : '',
-                fnCreate    : function() {
-                    hotelStorage.set(
-                        CONTROLLERS.hotels,
-                        $scope,
-                        hotelStorage.create(CONTROLLERS.hotels)
-                    );
-
-                    $scope.active   = 'create';
-                },
-                fnEdit      : function(model) {
-                    hotelStorage.set(
-                        CONTROLLERS.hotels,
-                        $scope,
-                        model
-                    );
-
-                    $scope.active   = 'edit';
-                },
-                fnSave      : function() {
-                    hotelStorage.save(
-                        CONTROLLERS.hotels,
-                        $scope
-                    );
-
-                    $scope.active   = '';
-                },
-                fnDelete    : function(model) {
-                    hotelStorage.delete(CONTROLLERS.hotels, $scope, model);
-                },
-                fnCancel    : function() {
-                    $scope.active   = '';
-                }
-            });
-        }
-    ]
-);
-controllers.controller(
-    'Numbers',
-    [
-        '$scope',
-        'hotelStorage',
+        'photosStorage',
         '$routeParams',
-        function ($scope, hotelStorage, $routeParams) {
-            var numbers     = hotelStorage.getStorage(CONTROLLERS.hotelNumbers, $routeParams.hotelId);
+        function($rootScope, $scope, photosStorage, $routeParams) {
+            var imageList = photosStorage.getStorage(STORAGES.imageList, $routeParams.galleryId);
 
             angular.extend($scope, {
-                hotelNumbers: numbers,
+                imageList   : imageList,
                 active      : '',
                 fnCreate    : function() {
-                    hotelStorage.set(
-                        CONTROLLERS.hotelNumbers,
+                    photosStorage.set(
+                        STORAGES.imageList,
                         $scope,
-                        hotelStorage.create(CONTROLLERS.hotelNumbers)
+                        photosStorage.create(STORAGES.imageList)
                     );
 
-                    $scope.active   = 'create';
-                },
-                fnEdit      : function(model) {
-                    hotelStorage.set(
-                        CONTROLLERS.hotelNumbers,
-                        $scope,
-                        model
-                    );
-
-                    $scope.active   = 'edit';
+                    $scope.active   = 'upload';
                 },
                 fnSave      : function() {
-                    hotelStorage.save(
-                        CONTROLLERS.hotelNumbers,
-                        $scope,
-                        $routeParams.hotelId
-                    );
+                    $scope.active   = 'uploading';
+                    
+                    jQuery.getJSON('http://cors.io/?u=https://api.imageresizer.io/v0.1/images?url=' + $scope.urlImage, function(response) {
+                        $scope.remoteId = response.response.id;
+                        photosStorage.save(
+                            STORAGES.imageList,
+                            $scope,
+                            $scope.id
+                        );
 
-                    $scope.active   = '';
+                        $scope.active   = '';
+
+                        $scope.$apply();
+                    });
                 },
                 fnDelete    : function(model) {
-                    hotelStorage.delete(CONTROLLERS.hotelNumbers, $scope, model);
+                    photosStorage.delete(STORAGES.galleryList, $scope, model);
                 },
                 fnCancel    : function() {
                     $scope.active   = '';
                 }
-            });
+            })
         }
     ]
-);
-
+)
 
 
 var app = angular.module('app', ['ngRoute', 'Controllers']);
@@ -452,8 +374,6 @@ app.controller(
         '$rootScope',
         function($rootScope) {
             $rootScope.showAdmin    = true;
-            
-            $rootScope.currentPage  = 'index';
         }
     ]
 );
