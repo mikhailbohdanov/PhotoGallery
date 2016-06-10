@@ -228,7 +228,8 @@ controllers.config(
                     controller  : 'ImagesAdmin'
                 })
                 .when('/admin/thumbnail/:galleryId', {
-
+                    template    : TEMPLATES.thumbnailAdmin,
+                    controller  : 'ThumbnailAdmin'
                 })
                 .when('/admin/thumbnail/:galleryId/:imageId', {
 
@@ -248,6 +249,23 @@ controllers.controller(
 
             angular.extend($scope, {
                 galleryList : galleryList
+            });
+        }
+    ]
+);
+controllers.controller(
+    'GalleryView',
+    [
+        '$scope',
+        'photosStorage',
+        '$routeParams',
+        function($scope, photosStorage, $routeParams) {
+            var imageList = photosStorage.getStorage(STORAGES.imageList, $routeParams.galleryId);
+
+            $scope.imageList = imageList;
+
+            $scope.$watch('assignments', function() {
+                blueimp.Gallery($('#links a'), $('#blueimp-gallery').data());
             });
         }
     ]
@@ -352,7 +370,40 @@ controllers.controller(
             })
         }
     ]
-)
+);
+controllers.controller(
+    'ThumbnailAdmin',
+    [
+        '$rootScope',
+        '$scope',
+        'photosStorage',
+        '$routeParams',
+        function($rootScope, $scope, photosStorage, $routeParams) {
+            var galleryList = photosStorage.getStorage(STORAGES.galleryList);
+            var imageList = photosStorage.getStorage(STORAGES.imageList, $routeParams.galleryId);
+
+            angular.extend($scope, {
+                galleryList : galleryList,
+                imageList   : imageList,
+                setThumbnail: function(model) {
+                    var element = null;
+
+                    galleryList.forEach(function (e) {
+                        if (e.id === $routeParams.galleryId) {
+                            element = e;
+                        }
+                    });
+
+                    element.thumbnail = model.remoteId;
+                    photosStorage.set(STORAGES.galleryList, $scope, element);
+                    photosStorage.save(STORAGES.galleryList, $scope, element.id);
+
+
+                }
+            })
+        }
+    ]
+);
 
 
 var app = angular.module('app', ['ngRoute', 'Controllers']);

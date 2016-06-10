@@ -9,6 +9,8 @@
     <link href="css/normalize.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css"/>
+    <link rel="stylesheet" href="//blueimp.github.io/Gallery/css/blueimp-gallery.min.css">
+    <link rel="stylesheet" href="css/bootstrap-image-gallery.min.css">
 </head>
 <body ng-controller="Main">
 
@@ -48,17 +50,30 @@
 <script type="angular/template" id="galleryList">
     <div class="container">
         <div class="row">
-            <div class="col-md-4" ng-repeat="gallery in galleryList">
-                {{gallery.name}}
-            </div>
+            <a href="#/gallery/view/{{gallery.id}}" class="col-md-4 image" ng-repeat="gallery in galleryList">
+                <img src="http://img.imageresizer.io/{{gallery.thumbnail}}?width=400&height=400" />
+                <div style="text-align: center;">{{gallery.name}}</div>
+            </a>
         </div>
     </div>
 </script>
 <script type="angular/template" id="imageListAll">
-
+    <div class="container">
+        <div class="row">
+            <a href="#/gallery/view/{{gallery.id}}" class="col-md-4 image" ng-repeat="gallery in galleryList">
+                <img src="http://img.imageresizer.io/{{gallery.thumbnail}}?width=400&height=400" />
+            </a>
+        </div>
+    </div>
 </script>
 <script type="angular/template" id="imageList">
-
+    <div class="container">
+        <div id="links" class="row">
+            <a href="http://img.imageresizer.io/{{image.remoteId}}?width=800" class="col-md-3 image" data-gallery ng-repeat="image in imageList">
+                <img src="http://img.imageresizer.io/{{image.remoteId}}?width=300&height=300" />
+            </a>
+        </div>
+    </div>
 </script>
 
 <script type="angular/template" id="galleryAdmin">
@@ -166,13 +181,56 @@
                             class="col-xs-5 btn btn-primary">Сохранить</button>
 
                     <button ng-click="fnCancel()"
-                            ng-disabled="active == 'uploading'"
                             class="col-xs-5 col-xs-offset-2 btn btn-danger">Отмена</button>
                 </div>
             </div>
         </div>
     </div>
 </script>
+<script type="angular/template" id="thumbnailAdmin">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <div ng-repeat="image in imageList" class="col-xs-12 col-sm-6 col-md-4 col-lg-3 image" ng-click="setThumbnail(image)">
+                    <img src="http://img.imageresizer.io/{{image.remoteId}}?width=250&height=250" />
+                </div>
+            </div>
+        </div>
+</script>
+
+<div id="blueimp-gallery" class="blueimp-gallery">
+    <!-- The container for the modal slides -->
+    <div class="slides"></div>
+    <!-- Controls for the borderless lightbox -->
+    <h3 class="title"></h3>
+    <a class="prev">‹</a>
+    <a class="next">›</a>
+    <a class="close">×</a>
+    <a class="play-pause"></a>
+    <ol class="indicator"></ol>
+    <!-- The modal dialog, which will be used to wrap the lightbox content -->
+    <div class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title"></h4>
+                </div>
+                <div class="modal-body next"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default pull-left prev">
+                        <i class="glyphicon glyphicon-chevron-left"></i>
+                        Previous
+                    </button>
+                    <button type="button" class="btn btn-primary next">
+                        Next
+                        <i class="glyphicon glyphicon-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="js/jquery.js"></script>
 <script src="js/angular.js"></script>
@@ -183,6 +241,7 @@
 
 <!-- AngularFire -->
 <script src="https://cdn.firebase.com/libs/angularfire/0.9.0/angularfire.min.js"></script>
+<script src="//blueimp.github.io/Gallery/js/jquery.blueimp-gallery.min.js"></script>
 
 <script src="js/bootstrap.js"></script>
 <script src="js/app.js"></script>
