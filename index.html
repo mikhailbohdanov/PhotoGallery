@@ -59,9 +59,9 @@
 </script>
 <script type="angular/template" id="imageListAll">
     <div class="container">
-        <div class="row">
-            <a href="#/gallery/view/{{gallery.id}}" class="col-md-4 image" ng-repeat="gallery in galleryList">
-                <img src="http://img.imageresizer.io/{{gallery.thumbnail}}?width=400&height=400" />
+        <div id="links" class="row">
+            <a href="http://img.imageresizer.io/{{image.remoteId}}?width=800" class="col-md-3 image" data-gallery ng-repeat="image in imageList">
+                <img src="http://img.imageresizer.io/{{image.remoteId}}?width=300&height=300" />
             </a>
         </div>
     </div>

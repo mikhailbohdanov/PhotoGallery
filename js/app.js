@@ -254,6 +254,29 @@ controllers.controller(
     ]
 );
 controllers.controller(
+    'GalleryAll',
+    [
+        '$scope',
+        'photosStorage',
+        '$routeParams',
+        function($scope, photosStorage, $routeParams) {
+            var galleryList = photosStorage.getStorage(STORAGES.galleryList);
+
+            var imageList = [];
+
+            galleryList.forEach(function(gallery) {
+                var _imageList = photosStorage.getStorage(STORAGES.imageList, gallery.id);
+                imageList = imageList.concat(_imageList);
+            });
+
+            $scope.imageList = imageList;
+            $scope.$watch('assignments', function() {
+                blueimp.Gallery($('#links a'), $('#blueimp-gallery').data());
+            });
+        }
+    ]
+)
+controllers.controller(
     'GalleryView',
     [
         '$scope',
